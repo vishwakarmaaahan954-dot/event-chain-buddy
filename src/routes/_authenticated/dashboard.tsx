@@ -22,8 +22,13 @@ function useProfile() {
         .select("id, display_name")
         .eq("id", auth.user.id)
         .maybeSingle();
-      return { id: auth.user.id, display_name: data?.display_name ?? auth.user.email };
+      const metaName = (auth.user.user_metadata as { display_name?: string })?.display_name;
+      return {
+        id: auth.user.id,
+        display_name: data?.display_name ?? metaName ?? auth.user.email ?? "Planner",
+      };
     },
+    staleTime: 60_000,
   });
 }
 
