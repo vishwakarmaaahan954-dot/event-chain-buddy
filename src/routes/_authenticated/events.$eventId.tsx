@@ -260,7 +260,7 @@ function NodeCard({
   );
 }
 
-function Field({ label, value }: { label: string; value?: string | null }) {
+function Field({ label, value }: { label: string; value?: string | null | undefined }) {
   if (!value) return null;
   return (
     <div>
