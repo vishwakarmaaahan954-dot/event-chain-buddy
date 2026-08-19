@@ -40,8 +40,11 @@ function AuthPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) return toast.error(error.message);
-    navigate({ to: "/dashboard", replace: true });
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    void navigate({ to: "/dashboard", replace: true });
   }
 
   async function signUp(e: React.FormEvent) {
@@ -56,9 +59,12 @@ function AuthPage() {
       },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     if (data.session) {
-      navigate({ to: "/dashboard", replace: true });
+      void navigate({ to: "/dashboard", replace: true });
     } else {
       toast.success("Account created — check your email to confirm.");
     }
