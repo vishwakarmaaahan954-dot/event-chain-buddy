@@ -10,7 +10,7 @@ export function AppShell({
   displayName,
 }: {
   children: ReactNode;
-  displayName?: string | null;
+  displayName?: string | null | undefined;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
