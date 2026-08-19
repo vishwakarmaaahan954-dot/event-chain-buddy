@@ -59,6 +59,12 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-node-pending: var(--node-pending);
+  --color-node-pending-soft: var(--node-pending-soft);
+  --color-node-done: var(--node-done);
+  --color-node-done-soft: var(--node-done-soft);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-body);
 }
 
 :root {
@@ -154,5 +160,22 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    background-image: var(--surface-glow);
+    background-attachment: fixed;
+    font-family: var(--font-body);
   }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+  }
+}
+
+@utility text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
