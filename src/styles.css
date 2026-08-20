@@ -92,6 +92,15 @@
   --node-pending-soft: oklch(0.34 0.09 25);
   --node-done: oklch(0.68 0.15 158);
   --node-done-soft: oklch(0.32 0.07 160);
+  --bp-node-bg: oklch(0.22 0.028 262 / 0.92);
+  --bp-line: oklch(0.4 0.03 262);
+  --bp-pin-data: oklch(0.8 0.14 200);
+  --bp-pin-object: oklch(0.78 0.15 300);
+  --bp-pin-time: oklch(0.84 0.15 95);
+  --bp-comment: oklch(0.62 0.11 260);
+  --bp-comment-fill: oklch(0.62 0.11 260 / 0.08);
+  --bp-comment-fg: oklch(0.16 0.02 262);
+  --bp-grid: oklch(0.3 0.03 262 / 0.55);
   --surface-glow: radial-gradient(
     900px circle at 15% -10%,
     oklch(0.42 0.12 78 / 0.35),
