@@ -240,15 +240,6 @@ function NodeRun({
   );
 }
 
-function Field({ label, value }: { label: string; value?: string | null | undefined }) {
-  if (!value) return null;
-  return (
-    <div>
-      <dt className="text-xs uppercase tracking-wide opacity-70">{label}</dt>
-      <dd>{value}</dd>
-    </div>
-  );
-}
 
 function NodeDialog({
   eventId,
