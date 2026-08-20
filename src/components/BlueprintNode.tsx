@@ -104,7 +104,7 @@ function PinRow({ label, color }: { label: string; color: string }) {
   );
 }
 
-function PinField({ label, value, color }: { label: string; value?: string | null; color: string }) {
+function PinField({ label, value, color }: { label: string; value?: string | null | undefined; color: string }) {
   if (!value) return null;
   return (
     <div className="flex items-start gap-2">

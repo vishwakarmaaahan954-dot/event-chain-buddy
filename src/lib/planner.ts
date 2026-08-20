@@ -64,3 +64,40 @@ export async function fetchNodes(eventId: string) {
   if (error) throw error;
   return (data ?? []) as NodeRow[];
 }
+export type ShareRow = {
+  id: string;
+  event_id: string;
+  invited_email: string;
+  can_edit: boolean;
+  status: "pending" | "approved" | "changes_requested";
+  note: string | null;
+  created_at: string;
+};
+
+export async function fetchShares(eventId: string) {
+  const { data, error } = await supabase
+    .from("event_shares")
+    .select("*")
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return (data ?? []) as ShareRow[];
+}
+
+/** Shares addressed to the signed-in user (RLS filters by their email). */
+export async function fetchMyInvites(email: string) {
+  const { data, error } = await supabase
+    .from("event_shares")
+    .select("*")
+    .ilike("invited_email", email)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as ShareRow[];
+}
+
+export async function fetchEventsByIds(ids: string[]) {
+  if (ids.length === 0) return [] as EventRow[];
+  const { data, error } = await supabase.from("events").select("*").in("id", ids);
+  if (error) throw error;
+  return (data ?? []) as EventRow[];
+}
