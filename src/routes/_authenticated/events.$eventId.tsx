@@ -3,9 +3,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchEvent, fetchNodes, type NodeRow } from "@/lib/planner";
+import { fetchEvent, fetchNodes, fetchShares, type NodeRow } from "@/lib/planner";
 import { AppShell } from "@/components/AppShell";
 import { BlueprintNode, BlueprintWire, CommentFrame } from "@/components/BlueprintNode";
+import { SharePanel } from "@/components/SharePanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -41,9 +42,19 @@ function EventDetail() {
     queryFn: () => fetchNodes(eventId),
   });
 
+  const sharesQuery = useQuery({
+    queryKey: ["shares", eventId],
+    queryFn: () => fetchShares(eventId),
+  });
+
   const event = eventQuery.data;
   const nodes = nodesQuery.data ?? [];
-  const canEdit = !!me.data && !!event && me.data.id === event.owner_id;
+  const myEmail = me.data?.email ?? "";
+  const isOwner = !!me.data && !!event && me.data.id === event.owner_id;
+  const myShare = (sharesQuery.data ?? []).find(
+    (s) => s.invited_email.toLowerCase() === myEmail.toLowerCase(),
+  );
+  const canEdit = isOwner || !!myShare?.can_edit;
   const doneCount = nodes.filter((n) => n.is_done).length;
 
   function refresh() {
@@ -149,16 +160,19 @@ function EventDetail() {
               {doneCount}/{nodes.length} steps done
             </Badge>
             {!canEdit ? <Badge variant="outline">View only</Badge> : null}
+            {!isOwner && canEdit ? <Badge variant="outline">Shared · can edit</Badge> : null}
           </div>
         </div>
-        {canEdit ? (
-          <div className="flex gap-2">
+        <div className="flex gap-2">
+          {canEdit ? (
             <NodeDialog eventId={eventId} nextPosition={nodes.length} onSaved={refresh} />
+          ) : null}
+          {isOwner ? (
             <Button variant="ghost" onClick={deleteEvent}>
               Delete event
             </Button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
 
       <div className="bp-canvas mt-10 overflow-x-auto rounded-2xl border border-border/70 p-6">
@@ -193,6 +207,8 @@ function EventDetail() {
           </div>
         )}
       </div>
+
+      <SharePanel eventId={eventId} isOwner={isOwner} myEmail={myEmail} />
     </AppShell>
   );
 }

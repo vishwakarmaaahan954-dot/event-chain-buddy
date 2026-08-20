@@ -1,7 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchMyEvents, fetchPublicEvents, type EventRow } from "@/lib/planner";
+import {
+  fetchEventsByIds,
+  fetchMyEvents,
+  fetchMyInvites,
+  fetchPublicEvents,
+  type EventRow,
+} from "@/lib/planner";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +31,7 @@ function useProfile() {
       const metaName = (auth.user.user_metadata as { display_name?: string })?.display_name;
       return {
         id: auth.user.id,
+        email: auth.user.email ?? "",
         display_name: data?.display_name ?? metaName ?? auth.user.email ?? "Planner",
       };
     },
@@ -40,6 +47,14 @@ function Dashboard() {
     queryKey: ["events", "mine", userId],
     queryFn: () => fetchMyEvents(userId),
     enabled: !!userId,
+  });
+  const shared = useQuery({
+    queryKey: ["events", "shared", profile?.email ?? ""],
+    queryFn: async () => {
+      const invites = await fetchMyInvites(profile?.email ?? "");
+      return fetchEventsByIds(invites.map((i) => i.event_id));
+    },
+    enabled: !!profile?.email,
   });
   const others = useQuery({
     queryKey: ["events", "public", userId],
@@ -64,6 +79,7 @@ function Dashboard() {
       <Tabs defaultValue="current" className="mt-8">
         <TabsList>
           <TabsTrigger value="current">Current events</TabsTrigger>
+          <TabsTrigger value="shared">Shared with me</TabsTrigger>
           <TabsTrigger value="discover">Fetch events</TabsTrigger>
         </TabsList>
 
@@ -74,6 +90,18 @@ function Dashboard() {
             <EmptyState />
           ) : (
             <EventGrid events={mine.data ?? []} />
+          )}
+        </TabsContent>
+
+        <TabsContent value="shared" className="mt-6">
+          {shared.isLoading ? (
+            <p className="text-muted-foreground">Loading…</p>
+          ) : (shared.data ?? []).length === 0 ? (
+            <p className="text-muted-foreground">
+              Nobody has invited you to a plan yet. Ask them to share it with your account email.
+            </p>
+          ) : (
+            <EventGrid events={shared.data ?? []} />
           )}
         </TabsContent>
 
