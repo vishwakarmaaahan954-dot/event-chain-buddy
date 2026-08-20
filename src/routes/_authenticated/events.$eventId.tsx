@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchEvent, fetchNodes, type NodeRow } from "@/lib/planner";
 import { AppShell } from "@/components/AppShell";
+import { BlueprintNode, BlueprintWire, CommentFrame } from "@/components/BlueprintNode";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -88,6 +89,28 @@ function EventDetail() {
     void navigate({ to: "/dashboard", replace: true });
   }
 
+  const groups = groupNodes(nodes);
+
+  function actionsFor(node: NodeRow): ReactNode {
+    return (
+      <>
+        <Button size="sm" variant={node.is_done ? "outline" : "default"} onClick={() => toggleDone(node)}>
+          {node.is_done ? "Reopen" : "Mark done"}
+        </Button>
+        <NodeDialog eventId={node.event_id} nextPosition={node.position} node={node} onSaved={refresh} />
+        <Button size="sm" variant="ghost" onClick={() => move(node, -1)} aria-label="Move earlier">
+          ←
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => move(node, 1)} aria-label="Move later">
+          →
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => removeNode(node)}>
+          Delete
+        </Button>
+      </>
+    );
+  }
+
   if (eventQuery.isLoading) {
     return (
       <AppShell>
@@ -138,124 +161,81 @@ function EventDetail() {
         ) : null}
       </div>
 
-      <div className="mt-10">
+      <div className="bp-canvas mt-10 overflow-x-auto rounded-2xl border border-border/70 p-6">
         {nodes.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
+          <div className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
             No steps yet. Add the first node of the chain.
           </div>
         ) : (
-          <ol className="space-y-0">
-            {nodes.map((node, i) => (
-              <li key={node.id}>
-                <NodeCard
-                  node={node}
-                  index={i}
-                  canEdit={canEdit}
-                  onToggle={() => toggleDone(node)}
-                  onDelete={() => removeNode(node)}
-                  onMoveUp={() => move(node, -1)}
-                  onMoveDown={() => move(node, 1)}
-                  onSaved={refresh}
-                />
-                {i < nodes.length - 1 ? (
-                  <div className="ml-8 flex h-10 items-center">
-                    <div className="h-full w-px bg-border" />
-                    <span className="ml-2 text-xs text-muted-foreground">next →</span>
-                  </div>
-                ) : null}
-              </li>
+          <div className="flex min-w-max items-start">
+            {groups.map((group, gi) => (
+              <div key={group.key} className="flex items-start">
+                {gi > 0 ? <BlueprintWire done={group.nodes[0]!.is_done} /> : null}
+                {group.label ? (
+                  <CommentFrame label={group.label}>
+                    <NodeRun
+                      nodes={group.nodes}
+                      offset={group.offset}
+                      canEdit={canEdit}
+                      actionsFor={actionsFor}
+                    />
+                  </CommentFrame>
+                ) : (
+                  <NodeRun
+                    nodes={group.nodes}
+                    offset={group.offset}
+                    canEdit={canEdit}
+                    actionsFor={actionsFor}
+                  />
+                )}
+              </div>
             ))}
-          </ol>
+          </div>
         )}
       </div>
     </AppShell>
   );
 }
 
-function NodeCard({
-  node,
-  index,
+type NodeGroup = { key: string; label: string | null; offset: number; nodes: NodeRow[] };
+
+function groupNodes(nodes: NodeRow[]): NodeGroup[] {
+  const groups: NodeGroup[] = [];
+  nodes.forEach((node, index) => {
+    const label = node.group_label?.trim() ? node.group_label.trim() : null;
+    const last = groups[groups.length - 1];
+    if (last && last.label === label) {
+      last.nodes.push(node);
+      return;
+    }
+    groups.push({ key: `${label ?? "solo"}-${index}`, label, offset: index, nodes: [node] });
+  });
+  return groups;
+}
+
+function NodeRun({
+  nodes,
+  offset,
   canEdit,
-  onToggle,
-  onDelete,
-  onMoveUp,
-  onMoveDown,
-  onSaved,
+  actionsFor,
 }: {
-  node: NodeRow;
-  index: number;
+  nodes: NodeRow[];
+  offset: number;
   canEdit: boolean;
-  onToggle: () => void;
-  onDelete: () => void;
-  onMoveUp: () => void;
-  onMoveDown: () => void;
-  onSaved: () => void;
+  actionsFor: (node: NodeRow) => ReactNode;
 }) {
   return (
-    <div
-      className="rounded-2xl border p-6 transition-colors"
-      style={{
-        borderColor: node.is_done ? "var(--node-done)" : "var(--node-pending)",
-        backgroundColor: node.is_done ? "var(--node-done-soft)" : "var(--node-pending-soft)",
-        boxShadow: "var(--shadow-node)",
-      }}
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-full bg-background/40 px-2 py-0.5 text-xs">#{index + 1}</span>
-            <h3 className="text-xl font-semibold">{node.title}</h3>
-            {node.group_label ? <Badge variant="outline">{node.group_label}</Badge> : null}
-            <Badge variant="secondary">{node.is_done ? "Done" : "Pending"}</Badge>
-          </div>
-          {node.description ? <p className="mt-3 text-sm">{node.description}</p> : null}
-          <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-            <Field label="Preferences" value={node.preferences} />
-            <Field label="Concerned parties" value={node.concerned_parties} />
-            <Field label="Responsible company / person" value={node.vendor_name} />
-            <Field label="Contact" value={node.vendor_contact} />
-            <Field label="Scheduled" value={node.scheduled_at?.replace("T", " ").slice(0, 16)} />
-            {node.vendor_link ? (
-              <div>
-                <dt className="text-xs uppercase tracking-wide opacity-70">Link</dt>
-                <dd>
-                  <a
-                    className="underline underline-offset-4"
-                    href={node.vendor_link}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                  >
-                    {node.vendor_link}
-                  </a>
-                </dd>
-              </div>
-            ) : null}
-          </dl>
+    <div className="flex items-start">
+      {nodes.map((node, i) => (
+        <div key={node.id} className="flex items-start">
+          {i > 0 ? <BlueprintWire done={node.is_done} width={56} /> : null}
+          <BlueprintNode
+            node={node}
+            index={offset + i}
+            {...(canEdit ? { actions: actionsFor(node) } : {})}
+          />
         </div>
-
-        {canEdit ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button size="sm" variant={node.is_done ? "outline" : "default"} onClick={onToggle}>
-              {node.is_done ? "Reopen" : "Mark done"}
-            </Button>
-            <NodeDialog
-              eventId={node.event_id}
-              nextPosition={node.position}
-              node={node}
-              onSaved={onSaved}
-            />
-            <Button size="sm" variant="ghost" onClick={onMoveUp} aria-label="Move up">
-              ↑
-            </Button>
-            <Button size="sm" variant="ghost" onClick={onMoveDown} aria-label="Move down">
-              ↓
-            </Button>
-            <Button size="sm" variant="ghost" onClick={onDelete}>
-              Delete
-            </Button>
-          </div>
-        ) : null}
-      </div>
+      ))}
     </div>
   );
 }
