@@ -43,7 +43,10 @@ export function SharePanel({
 
   async function remove(share: ShareRow) {
     const { error } = await supabase.from("event_shares").delete().eq("id", share.id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     refresh();
   }
 
@@ -52,7 +55,10 @@ export function SharePanel({
       .from("event_shares")
       .update({ can_edit: !share.can_edit })
       .eq("id", share.id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     refresh();
   }
 
@@ -129,7 +135,10 @@ function ReviewBar({ share, onSaved }: { share: ShareRow; onSaved: () => void })
       .update({ status, note: note || null })
       .eq("id", share.id);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     onSaved();
     toast.success(status === "approved" ? "Plan approved" : "Change request sent");
   }
@@ -174,7 +183,10 @@ function InviteDialog({ eventId, onSaved }: { eventId: string; onSaved: () => vo
       .from("event_shares")
       .insert({ event_id: eventId, invited_email: email.trim().toLowerCase(), can_edit: canEdit });
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setEmail("");
     setCanEdit(false);
     setOpen(false);
