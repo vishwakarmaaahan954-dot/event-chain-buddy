@@ -76,6 +76,47 @@ export type Database = {
           },
         ]
       }
+      event_shares: {
+        Row: {
+          can_edit: boolean
+          created_at: string
+          event_id: string
+          id: string
+          invited_email: string
+          note: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          can_edit?: boolean
+          created_at?: string
+          event_id: string
+          id?: string
+          invited_email: string
+          note?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          can_edit?: boolean
+          created_at?: string
+          event_id?: string
+          id?: string
+          invited_email?: string
+          note?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_shares_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string
@@ -141,7 +182,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_edit_event: { Args: { _event_id: string }; Returns: boolean }
+      is_event_owner: { Args: { _event_id: string }; Returns: boolean }
+      is_shared_with_me: { Args: { _event_id: string }; Returns: boolean }
+      my_email: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never
