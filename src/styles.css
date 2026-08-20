@@ -188,3 +188,10 @@
   background-clip: text;
   color: transparent;
 }
+
+@utility bp-canvas {
+  background-image:
+    linear-gradient(var(--bp-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-grid) 1px, transparent 1px);
+  background-size: 28px 28px, 28px 28px;
+}
