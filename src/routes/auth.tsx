@@ -208,7 +208,17 @@ function AuthPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground underline"
+                      onClick={sendResetEmail}
+                      disabled={loading}
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
                   <Input
                     id="password"
                     type="password"
@@ -221,6 +231,7 @@ function AuthPage() {
                   {loading ? "Signing in…" : "Sign in"}
                 </Button>
               </form>
+
             </TabsContent>
 
             <TabsContent value="signup">
