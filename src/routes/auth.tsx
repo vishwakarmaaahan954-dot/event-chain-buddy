@@ -293,6 +293,9 @@ function AuthPage() {
             </svg>
             Google
           </Button>
+          </>
+          )}
+
         </div>
       </div>
     </main>
