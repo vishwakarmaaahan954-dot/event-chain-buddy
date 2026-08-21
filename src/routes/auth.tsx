@@ -142,10 +142,52 @@ function AuthPage() {
             <span className="text-gradient">Threadline</span>
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            Sign in to open your planning board.
+            {verifyEmail ? `Enter the code we sent to ${verifyEmail}.` : "Sign in to open your planning board."}
           </p>
 
+          {verifyEmail ? (
+            <form onSubmit={verifyCode} className="mt-6 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="code">Verification code</Label>
+                <Input
+                  id="code"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  required
+                  maxLength={10}
+                  placeholder="123456"
+                  className="text-center text-lg tracking-[0.4em]"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Verifying…" : "Verify email"}
+              </Button>
+              <div className="flex items-center justify-between text-xs">
+                <button
+                  type="button"
+                  className="text-muted-foreground underline"
+                  onClick={resendCode}
+                  disabled={loading}
+                >
+                  Resend code
+                </button>
+                <button
+                  type="button"
+                  className="text-muted-foreground underline"
+                  onClick={() => {
+                    setVerifyEmail(null);
+                    setCode("");
+                  }}
+                >
+                  Back to sign in
+                </button>
+              </div>
+            </form>
+          ) : (
           <Tabs defaultValue="signin" className="mt-6">
+
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign in</TabsTrigger>
               <TabsTrigger value="signup">Create account</TabsTrigger>
