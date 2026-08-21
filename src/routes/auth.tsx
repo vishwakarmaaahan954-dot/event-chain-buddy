@@ -72,6 +72,25 @@ function AuthPage() {
     }
   }
 
+  async function signInWithGoogle() {
+    setLoading(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
+    setLoading(false);
+
+    if (result.error) {
+      toast.error(result.error.message);
+      return;
+    }
+
+    if (result.redirected) {
+      return;
+    }
+
+    void navigate({ to: "/dashboard", replace: true });
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-16">
       <div className="w-full max-w-md">
