@@ -30,6 +30,8 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
+  const [code, setCode] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -43,6 +45,11 @@ function AuthPage() {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
+      if (error.message.toLowerCase().includes("not confirmed")) {
+        setVerifyEmail(email);
+        toast.error("Email not verified — enter the code we sent you.");
+        return;
+      }
       toast.error(error.message);
       return;
     }
@@ -68,9 +75,42 @@ function AuthPage() {
     if (data.session) {
       void navigate({ to: "/dashboard", replace: true });
     } else {
-      toast.success("Account created — check your email to confirm.");
+      setVerifyEmail(email);
+      toast.success("We sent a 6-digit verification code to your email.");
     }
   }
+
+  async function verifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    if (!verifyEmail) return;
+    setLoading(true);
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: verifyEmail,
+      token: code.trim(),
+      type: "signup",
+    });
+    setLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    if (data.session) {
+      void navigate({ to: "/dashboard", replace: true });
+    } else {
+      toast.success("Email verified — you can sign in now.");
+      setVerifyEmail(null);
+    }
+  }
+
+  async function resendCode() {
+    if (!verifyEmail) return;
+    setLoading(true);
+    const { error } = await supabase.auth.resend({ type: "signup", email: verifyEmail });
+    setLoading(false);
+    if (error) toast.error(error.message);
+    else toast.success("New code sent.");
+  }
+
 
   async function signInWithGoogle() {
     setLoading(true);
