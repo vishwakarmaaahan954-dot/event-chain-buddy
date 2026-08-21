@@ -186,6 +186,8 @@ function AuthPage() {
               </div>
             </form>
           ) : (
+          <>
+
           <Tabs defaultValue="signin" className="mt-6">
 
             <TabsList className="grid w-full grid-cols-2">
