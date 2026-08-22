@@ -111,6 +111,20 @@ function AuthPage() {
     else toast.success("New code sent.");
   }
 
+  async function sendResetEmail() {
+    if (!email) {
+      toast.error("Enter your email address first.");
+      return;
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (error) toast.error(error.message);
+    else toast.success("Password reset link sent — check your email.");
+  }
+
 
   async function signInWithGoogle() {
     setLoading(true);
