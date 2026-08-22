@@ -183,6 +183,7 @@ export type Database = {
     }
     Functions: {
       can_edit_event: { Args: { _event_id: string }; Returns: boolean }
+      can_view_profile: { Args: { _profile_id: string }; Returns: boolean }
       is_event_owner: { Args: { _event_id: string }; Returns: boolean }
       is_shared_with_me: { Args: { _event_id: string }; Returns: boolean }
       my_email: { Args: never; Returns: string }
