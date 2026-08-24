@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchEvent, fetchNodes, fetchShares, type NodeRow } from "@/lib/planner";
+import { fetchEvent, fetchNodes, fetchShares, safeHttpUrl, type NodeRow } from "@/lib/planner";
 import { AppShell } from "@/components/AppShell";
 import { BlueprintNode, BlueprintWire, CommentFrame } from "@/components/BlueprintNode";
 import { SharePanel } from "@/components/SharePanel";
@@ -289,6 +289,12 @@ function NodeDialog({
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    const link = form.vendor_link.trim();
+    if (link && !safeHttpUrl(link)) {
+      setSaving(false);
+      toast.error("Link must be a full web address starting with http:// or https://");
+      return;
+    }
     const payload = {
       event_id: eventId,
       title: form.title,
@@ -297,7 +303,7 @@ function NodeDialog({
       concerned_parties: form.concerned_parties || null,
       vendor_name: form.vendor_name || null,
       vendor_contact: form.vendor_contact || null,
-      vendor_link: form.vendor_link || null,
+      vendor_link: link ? safeHttpUrl(link) : null,
       group_label: form.group_label || null,
       scheduled_at: form.scheduled_at ? new Date(form.scheduled_at).toISOString() : null,
       position: nextPosition,

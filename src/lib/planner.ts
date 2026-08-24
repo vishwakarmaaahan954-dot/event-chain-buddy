@@ -1,5 +1,16 @@
 import { supabase } from "@/integrations/supabase/client";
 
+/** Returns a normalized URL only when it uses http/https; otherwise null. */
+export function safeHttpUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
 export type EventRow = {
   id: string;
   owner_id: string;
