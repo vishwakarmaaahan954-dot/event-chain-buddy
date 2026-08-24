@@ -80,7 +80,7 @@ function Dashboard() {
         <TabsList>
           <TabsTrigger value="current">Current events</TabsTrigger>
           <TabsTrigger value="shared">Shared with me</TabsTrigger>
-          <TabsTrigger value="discover">Fetch events</TabsTrigger>
+          <TabsTrigger value="discover">Public events</TabsTrigger>
         </TabsList>
 
         <TabsContent value="current" className="mt-6">
@@ -110,7 +110,7 @@ function Dashboard() {
             <p className="text-muted-foreground">Loading…</p>
           ) : (others.data ?? []).length === 0 ? (
             <p className="text-muted-foreground">
-              No shared plans from other people yet. Check back soon.
+              No public events from other people yet. Check back soon.
             </p>
           ) : (
             <EventGrid events={others.data ?? []} />
