@@ -84,6 +84,7 @@ export type Database = {
           id: string
           invited_email: string
           note: string | null
+          owner_id: string
           status: string
           updated_at: string
         }
@@ -94,6 +95,7 @@ export type Database = {
           id?: string
           invited_email: string
           note?: string | null
+          owner_id: string
           status?: string
           updated_at?: string
         }
@@ -104,6 +106,7 @@ export type Database = {
           id?: string
           invited_email?: string
           note?: string | null
+          owner_id?: string
           status?: string
           updated_at?: string
         }

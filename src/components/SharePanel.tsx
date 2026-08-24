@@ -179,9 +179,22 @@ function InviteDialog({ eventId, onSaved }: { eventId: string; onSaved: () => vo
   async function invite(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const { error } = await supabase
-      .from("event_shares")
-      .insert({ event_id: eventId, invited_email: email.trim().toLowerCase(), can_edit: canEdit });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setSaving(false);
+      toast.error("You need to be signed in to share");
+      return;
+    }
+    // owner_id is re-derived from the event by a database trigger; the value
+    // here only satisfies the insert policy and can never grant ownership.
+    const { error } = await supabase.from("event_shares").insert({
+      event_id: eventId,
+      invited_email: email.trim().toLowerCase(),
+      can_edit: canEdit,
+      owner_id: user.id,
+    });
     setSaving(false);
     if (error) {
       toast.error(error.message);
