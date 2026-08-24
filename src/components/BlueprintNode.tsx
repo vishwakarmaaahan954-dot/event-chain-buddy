@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { NodeRow } from "@/lib/planner";
+import { safeHttpUrl, type NodeRow } from "@/lib/planner";
 
 /** Unreal-Engine-blueprint styled node. */
 export function BlueprintNode({
@@ -60,14 +60,18 @@ export function BlueprintNode({
             <Pin color="var(--bp-pin-object)" />
             <div className="min-w-0">
               <span className="opacity-60">Link</span>
-              <a
-                className="block truncate underline underline-offset-2"
-                href={node.vendor_link}
-                target="_blank"
-                rel="noreferrer noopener"
-              >
-                {node.vendor_link}
-              </a>
+              {safeHttpUrl(node.vendor_link) ? (
+                <a
+                  className="block truncate underline underline-offset-2"
+                  href={safeHttpUrl(node.vendor_link)!}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {node.vendor_link}
+                </a>
+              ) : (
+                <p className="break-words font-sans text-[12px]">{node.vendor_link}</p>
+              )}
             </div>
           </div>
         ) : null}
