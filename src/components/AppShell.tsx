@@ -19,7 +19,14 @@ export function AppShell({
     await queryClient.cancelQueries();
     queryClient.clear();
     await supabase.auth.signOut();
-    void navigate({ to: "/auth", replace: true });
+    // Scrub any leftover session copies the cross-tab sync may have missed,
+    // so a stale token can't resurrect the previous account on /auth.
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith("sb-") && key.endsWith("-auth-token")) {
+        localStorage.removeItem(key);
+      }
+    }
+    void navigate({ to: "/auth", search: { signed_out: 1 }, replace: true });
   }
 
   return (
