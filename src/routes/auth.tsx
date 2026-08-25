@@ -10,6 +10,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { signed_out?: number } => ({
+    signed_out: search["signed_out"] === 1 || search["signed_out"] === "1" ? 1 : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — Threadline Event Planner" },
@@ -26,6 +29,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { signed_out } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -34,10 +38,14 @@ function AuthPage() {
   const [code, setCode] = useState("");
 
   useEffect(() => {
+    // Right after an explicit sign-out, stay on this page even if a stale
+    // session resurfaces from the cross-tab login sync — the user is here to
+    // switch accounts, not to be bounced back into the previous one.
+    if (signed_out) return;
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/dashboard", replace: true });
     });
-  }, [navigate]);
+  }, [navigate, signed_out]);
 
   async function signIn(e: React.FormEvent) {
     e.preventDefault();
@@ -130,6 +138,9 @@ function AuthPage() {
     setLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin,
+      // Always show Google's account picker so users can switch accounts
+      // instead of being silently signed back into the previous one.
+      extraParams: { prompt: "select_account" },
     });
     setLoading(false);
 
