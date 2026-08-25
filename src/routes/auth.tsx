@@ -10,9 +10,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (search: Record<string, unknown>): { signed_out?: number } => ({
-    signed_out: search["signed_out"] === 1 || search["signed_out"] === "1" ? 1 : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { signed_out?: number } => {
+    const flag = search["signed_out"] === 1 || search["signed_out"] === "1";
+    return flag ? { signed_out: 1 } : {};
+  },
   head: () => ({
     meta: [
       { title: "Sign in — Threadline Event Planner" },
