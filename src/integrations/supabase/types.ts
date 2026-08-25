@@ -74,6 +74,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_nodes_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "public_event_feed"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_shares: {
@@ -118,6 +125,13 @@ export type Database = {
             referencedRelation: "events"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "event_shares_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "public_event_feed"
+            referencedColumns: ["id"]
+          },
         ]
       }
       events: {
@@ -129,6 +143,13 @@ export type Database = {
           is_public: boolean
           location: string | null
           owner_id: string
+          show_creator: boolean
+          show_date: boolean
+          show_description: boolean
+          show_location: boolean
+          show_nodes: boolean
+          show_tags: boolean
+          tags: string[]
           title: string
           updated_at: string
         }
@@ -140,6 +161,13 @@ export type Database = {
           is_public?: boolean
           location?: string | null
           owner_id: string
+          show_creator?: boolean
+          show_date?: boolean
+          show_description?: boolean
+          show_location?: boolean
+          show_nodes?: boolean
+          show_tags?: boolean
+          tags?: string[]
           title: string
           updated_at?: string
         }
@@ -151,6 +179,13 @@ export type Database = {
           is_public?: boolean
           location?: string | null
           owner_id?: string
+          show_creator?: boolean
+          show_date?: boolean
+          show_description?: boolean
+          show_location?: boolean
+          show_nodes?: boolean
+          show_tags?: boolean
+          tags?: string[]
           title?: string
           updated_at?: string
         }
@@ -182,7 +217,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_event_feed: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          event_date: string | null
+          id: string | null
+          location: string | null
+          owner_id: string | null
+          show_creator: boolean | null
+          show_nodes: boolean | null
+          tags: string[] | null
+          title: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: never
+          event_date?: never
+          id?: string | null
+          location?: never
+          owner_id?: string | null
+          show_creator?: boolean | null
+          show_nodes?: boolean | null
+          tags?: never
+          title?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: never
+          event_date?: never
+          id?: string | null
+          location?: never
+          owner_id?: string | null
+          show_creator?: boolean | null
+          show_nodes?: boolean | null
+          tags?: never
+          title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_edit_event: { Args: { _event_id: string }; Returns: boolean }
