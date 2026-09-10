@@ -19,6 +19,7 @@ function NewEvent() {
   const [description, setDescription] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [location, setLocation] = useState("");
+  const [tags, setTags] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -39,6 +40,10 @@ function NewEvent() {
         description: description || null,
         event_date: eventDate || null,
         location: location || null,
+        tags: tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
         is_public: isPublic,
       })
       .select("id")
@@ -50,6 +55,7 @@ function NewEvent() {
     }
     void navigate({ to: "/events/$eventId", params: { eventId: data.id } });
   }
+
 
   return (
     <AppShell>
