@@ -20,6 +20,33 @@ export type EventRow = {
   location: string | null;
   is_public: boolean;
   created_at: string;
+  tags: string[];
+  show_description: boolean;
+  show_date: boolean;
+  show_location: boolean;
+  show_tags: boolean;
+  show_nodes: boolean;
+  show_creator: boolean;
+};
+
+/** A public event as exposed by the masked feed view. */
+export type PublicEventRow = {
+  id: string;
+  owner_id: string;
+  title: string;
+  description: string | null;
+  event_date: string | null;
+  location: string | null;
+  created_at: string;
+  tags: string[] | null;
+  show_nodes: boolean;
+  show_creator: boolean;
+};
+
+export type ProfileRow = {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
 };
 
 export type NodeRow = {
@@ -48,17 +75,69 @@ export async function fetchMyEvents(userId: string) {
   return (data ?? []) as EventRow[];
 }
 
+/** Public events from other planners, with owner-hidden fields already masked. */
 export async function fetchPublicEvents(userId: string) {
   const { data, error } = await supabase
-    .from("events")
+    .from("public_event_feed")
     .select("*")
-    .eq("is_public", true)
     .neq("owner_id", userId)
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw error;
-  return (data ?? []) as EventRow[];
+  return (data ?? []) as PublicEventRow[];
 }
+
+/** Display names for a set of user ids (RLS hides profiles you may not see). */
+export async function fetchProfiles(ids: string[]) {
+  if (ids.length === 0) return [] as ProfileRow[];
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, display_name, avatar_url")
+    .in("id", ids);
+  if (error) throw error;
+  return (data ?? []) as ProfileRow[];
+}
+
+export async function fetchProfile(id: string) {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, display_name, avatar_url")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return (data ?? null) as ProfileRow | null;
+}
+
+/** Public events belonging to one creator. */
+export async function fetchPublicEventsByOwner(ownerId: string) {
+  const { data, error } = await supabase
+    .from("public_event_feed")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return (data ?? []) as PublicEventRow[];
+}
+
+/** Group labels used by an event's steps, for day/group filtering. */
+export async function fetchGroupLabels(eventIds: string[]) {
+  if (eventIds.length === 0) return {} as Record<string, string[]>;
+  const { data, error } = await supabase
+    .from("event_nodes")
+    .select("event_id, group_label")
+    .in("event_id", eventIds);
+  if (error) throw error;
+  const map: Record<string, string[]> = {};
+  for (const row of data ?? []) {
+    const label = row.group_label?.trim();
+    if (!label) continue;
+    const list = (map[row.event_id] ??= []);
+    if (!list.includes(label)) list.push(label);
+  }
+  return map;
+}
+
 
 export async function fetchEvent(id: string) {
   const { data, error } = await supabase.from("events").select("*").eq("id", id).maybeSingle();
