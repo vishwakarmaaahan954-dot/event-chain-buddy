@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { fetchEvent, fetchNodes, fetchShares, safeHttpUrl, type NodeRow } from "@/lib/planner";
+import { fetchEvent, fetchNodes, fetchShares, safeHttpUrl, type EventRow, type NodeRow } from "@/lib/planner";
 import { AppShell } from "@/components/AppShell";
 import { BlueprintNode, BlueprintWire, CommentFrame } from "@/components/BlueprintNode";
 import { SharePanel } from "@/components/SharePanel";
@@ -11,7 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+
 import {
   Dialog,
   DialogContent,
@@ -141,6 +143,13 @@ function EventDetail() {
     );
   }
 
+  const isViewer = !isOwner && !myShare;
+  const showDescription = !isViewer || event.show_description;
+  const showDate = !isViewer || event.show_date;
+  const showLocation = !isViewer || event.show_location;
+  const showTags = !isViewer || event.show_tags;
+  const stepsHidden = isViewer && !event.show_nodes;
+
   return (
     <AppShell>
       <Link to="/dashboard" className="text-sm text-muted-foreground">
@@ -150,18 +159,29 @@ function EventDetail() {
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold">{event.title}</h1>
-          {event.description ? (
+          {event.description && showDescription ? (
             <p className="mt-2 max-w-2xl text-muted-foreground">{event.description}</p>
           ) : null}
           <div className="mt-3 flex flex-wrap gap-2 text-sm text-muted-foreground">
-            {event.event_date ? <Badge variant="secondary">{event.event_date}</Badge> : null}
-            {event.location ? <Badge variant="secondary">{event.location}</Badge> : null}
-            <Badge variant="secondary">
-              {doneCount}/{nodes.length} steps done
-            </Badge>
+            {event.event_date && showDate ? <Badge variant="secondary">{event.event_date}</Badge> : null}
+            {event.location && showLocation ? <Badge variant="secondary">{event.location}</Badge> : null}
+            {!stepsHidden ? (
+              <Badge variant="secondary">
+                {doneCount}/{nodes.length} steps done
+              </Badge>
+            ) : null}
             {!canEdit ? <Badge variant="outline">View only</Badge> : null}
             {!isOwner && canEdit ? <Badge variant="outline">Shared · can edit</Badge> : null}
           </div>
+          {showTags && (event.tags ?? []).length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {(event.tags ?? []).map((tag) => (
+                <Badge key={tag} variant="outline">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
         </div>
         <div className="flex gap-2">
           {canEdit ? (
@@ -175,43 +195,130 @@ function EventDetail() {
         </div>
       </div>
 
-      <div className="bp-canvas mt-10 overflow-x-auto rounded-2xl border border-border/70 p-6">
-        {nodes.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
-            No steps yet. Add the first node of the chain.
-          </div>
-        ) : (
-          <div className="flex min-w-max items-start">
-            {groups.map((group, gi) => (
-              <div key={group.key} className="flex items-start">
-                {gi > 0 ? <BlueprintWire done={group.nodes[0]!.is_done} /> : null}
-                {group.label ? (
-                  <CommentFrame label={group.label}>
+      {isOwner ? <VisibilityPanel event={event} /> : null}
+
+      {stepsHidden ? (
+        <div className="mt-10 rounded-2xl border border-dashed border-border p-12 text-center text-muted-foreground">
+          The owner has hidden the steps of this plan.
+        </div>
+      ) : (
+        <div className="bp-canvas mt-10 overflow-x-auto rounded-2xl border border-border/70 p-6">
+          {nodes.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border p-12 text-center text-muted-foreground">
+              No steps yet. Add the first node of the chain.
+            </div>
+          ) : (
+            <div className="flex min-w-max items-start">
+              {groups.map((group, gi) => (
+                <div key={group.key} className="flex items-start">
+                  {gi > 0 ? <BlueprintWire done={group.nodes[0]!.is_done} /> : null}
+                  {group.label ? (
+                    <CommentFrame label={group.label}>
+                      <NodeRun
+                        nodes={group.nodes}
+                        offset={group.offset}
+                        canEdit={canEdit}
+                        actionsFor={actionsFor}
+                      />
+                    </CommentFrame>
+                  ) : (
                     <NodeRun
                       nodes={group.nodes}
                       offset={group.offset}
                       canEdit={canEdit}
                       actionsFor={actionsFor}
                     />
-                  </CommentFrame>
-                ) : (
-                  <NodeRun
-                    nodes={group.nodes}
-                    offset={group.offset}
-                    canEdit={canEdit}
-                    actionsFor={actionsFor}
-                  />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <SharePanel eventId={eventId} isOwner={isOwner} myEmail={myEmail} />
     </AppShell>
   );
 }
+
+const VISIBILITY_FIELDS = [
+  { key: "show_description", label: "Description" },
+  { key: "show_date", label: "Date" },
+  { key: "show_location", label: "Location" },
+  { key: "show_tags", label: "Tags" },
+  { key: "show_nodes", label: "Steps" },
+  { key: "show_creator", label: "Your name as creator" },
+] as const;
+
+function VisibilityPanel({ event }: { event: EventRow }) {
+  const queryClient = useQueryClient();
+  const [tags, setTags] = useState((event.tags ?? []).join(", "));
+  const [savingTags, setSavingTags] = useState(false);
+
+  async function toggle(key: (typeof VISIBILITY_FIELDS)[number]["key"], value: boolean) {
+    const { error } = await supabase.from("events").update({ [key]: value }).eq("id", event.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    void queryClient.invalidateQueries({ queryKey: ["event", event.id] });
+  }
+
+  async function saveTags() {
+    setSavingTags(true);
+    const list = tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean);
+    const { error } = await supabase.from("events").update({ tags: list }).eq("id", event.id);
+    setSavingTags(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    void queryClient.invalidateQueries({ queryKey: ["event", event.id] });
+    toast.success("Tags saved");
+  }
+
+  return (
+    <section className="mt-8 rounded-2xl border border-border bg-card p-6">
+      <h2 className="text-xl font-semibold">Visible to other planners</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Choose what people who find this plan under “Public events” are allowed to see.
+      </p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {VISIBILITY_FIELDS.map((field) => (
+          <label
+            key={field.key}
+            className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3"
+          >
+            <span className="text-sm">{field.label}</span>
+            <Switch
+              checked={event[field.key]}
+              onCheckedChange={(value) => toggle(field.key, value)}
+              aria-label={`Show ${field.label} publicly`}
+            />
+          </label>
+        ))}
+      </div>
+      <div className="mt-5 space-y-2">
+        <Label htmlFor="event-tags">Tags</Label>
+        <div className="flex gap-2">
+          <Input
+            id="event-tags"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="wedding, outdoor, catering"
+          />
+          <Button variant="outline" onClick={saveTags} disabled={savingTags}>
+            {savingTags ? "Saving…" : "Save"}
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 
 type NodeGroup = { key: string; label: string | null; offset: number; nodes: NodeRow[] };
 
