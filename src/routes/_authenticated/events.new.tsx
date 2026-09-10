@@ -108,15 +108,26 @@ function NewEvent() {
             />
           </div>
         </div>
+        <div className="space-y-2">
+          <Label htmlFor="tags">Tags</Label>
+          <Input
+            id="tags"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="wedding, outdoor, catering"
+          />
+          <p className="text-sm text-muted-foreground">Separate tags with commas.</p>
+        </div>
         <div className="flex items-center justify-between rounded-xl border border-border p-4">
           <div>
             <p className="font-medium">Discoverable by others</p>
             <p className="text-sm text-muted-foreground">
-              Lets other signed-in planners find this plan under “Fetch events”.
+              Lets other signed-in planners find this plan under “Public events”.
             </p>
           </div>
           <Switch checked={isPublic} onCheckedChange={setIsPublic} />
         </div>
+
         <Button type="submit" size="lg" disabled={saving}>
           {saving ? "Creating…" : "Create event"}
         </Button>
