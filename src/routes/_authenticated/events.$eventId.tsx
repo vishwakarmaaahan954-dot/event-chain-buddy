@@ -256,7 +256,8 @@ function VisibilityPanel({ event }: { event: EventRow }) {
   const [savingTags, setSavingTags] = useState(false);
 
   async function toggle(key: (typeof VISIBILITY_FIELDS)[number]["key"], value: boolean) {
-    const { error } = await supabase.from("events").update({ [key]: value }).eq("id", event.id);
+    const patch: Partial<Record<(typeof VISIBILITY_FIELDS)[number]["key"], boolean>> = { [key]: value };
+    const { error } = await supabase.from("events").update(patch).eq("id", event.id);
     if (error) {
       toast.error(error.message);
       return;
